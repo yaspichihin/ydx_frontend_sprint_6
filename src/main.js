@@ -6,8 +6,9 @@ import {data as sourceData} from "./data/dataset_1.js";
 import {initData} from "./data.js";
 import {processFormData} from "./lib/utils.js";
 
-import {initTable} from "./components/table.js";
 // @todo: подключение
+import {initTable} from "./components/table.js";
+import {initPagination} from "./components/pagination.js"
 
 
 // Исходные данные используемые в render()
@@ -18,11 +19,20 @@ const {data, ...indexes} = initData(sourceData);
  * @returns {Object}
  */
 function collectState() {
-    const state = processFormData(new FormData(sampleTable.container));
+  const formData = new FormData(sampleTable.container);
+  const state = processFormData(formData);
 
-    return {
-        ...state
-    };
+  // Приведём количество страниц к числу
+  const rowsPerPage = parseInt(state.rowsPerPage);
+  
+  // Номер страницы по умолчанию 1 и тоже число
+  const page = parseInt(state.page ?? 1);
+
+  return {
+    ...state,
+    rowsPerPage,
+    page
+  };
 }
 
 /**
@@ -30,23 +40,40 @@ function collectState() {
  * @param {HTMLButtonElement?} action
  */
 function render(action) {
-    let state = collectState(); // состояние полей из таблицы
-    let result = [...data]; // копируем для последующего изменения
-    // @todo: использование
+  // состояние полей из таблицы
+  let state = collectState();
 
+  // копируем для последующего изменения
+  let result = [...data];
 
-    sampleTable.render(result)
+  // @todo: использование
+  result = applyPagination(result, state, action); 
+  sampleTable.render(result);
 }
 
 const sampleTable = initTable({
     tableTemplate: 'table',
     rowTemplate: 'row',
     before: [],
-    after: []
+    after: ['pagination']
 }, render);
 
 // @todo: инициализация
+const applyPagination = initPagination(
+  // передаём сюда элементы пагинации, найденные в шаблоне
+  sampleTable.pagination.elements,
+  // и callback, чтобы заполнять кнопки страниц данными
+  (el, page, isCurrent) => {
+    const input = el.querySelector("input");
+    const label = el.querySelector("span");
+    input.value = page;
+    input.checked = isCurrent;
+    label.textContent = page;
+    return el;
+  }
+); 
 
+ 
 
 const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);
