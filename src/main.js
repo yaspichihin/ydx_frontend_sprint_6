@@ -1,18 +1,18 @@
-import './fonts/ys-display/fonts.css'
-import './style.css'
+import "./fonts/ys-display/fonts.css";
+import "./style.css";
 
-import {data as sourceData} from "./data/dataset_1.js";
+import { data as sourceData } from "./data/dataset_1.js";
 
-import {initData} from "./data.js";
-import {processFormData} from "./lib/utils.js";
+import { initData } from "./data.js";
+import { processFormData } from "./lib/utils.js";
 
 // @todo: подключение
-import {initTable} from "./components/table.js";
-import {initPagination} from "./components/pagination.js"
-
+import { initTable } from "./components/table.js";
+import { initPagination } from "./components/pagination.js";
+import { initSorting } from "./components/sorting.js";
 
 // Исходные данные используемые в render()
-const {data, ...indexes} = initData(sourceData);
+const { data, ...indexes } = initData(sourceData);
 
 /**
  * Сбор и обработка полей из таблицы
@@ -24,14 +24,14 @@ function collectState() {
 
   // Приведём количество страниц к числу
   const rowsPerPage = parseInt(state.rowsPerPage);
-  
+
   // Номер страницы по умолчанию 1 и тоже число
   const page = parseInt(state.page ?? 1);
 
   return {
     ...state,
     rowsPerPage,
-    page
+    page,
   };
 }
 
@@ -47,18 +47,23 @@ function render(action) {
   let result = [...data];
 
   // @todo: использование
-  result = applyPagination(result, state, action); 
+  result = applySorting(result, state, action);
+  result = applyPagination(result, state, action);
   sampleTable.render(result);
 }
 
-const sampleTable = initTable({
-    tableTemplate: 'table',
-    rowTemplate: 'row',
-    before: [],
-    after: ['pagination']
-}, render);
+const sampleTable = initTable(
+  {
+    tableTemplate: "table",
+    rowTemplate: "row",
+    before: ["header"],
+    after: ["pagination"],
+  },
+  render
+);
 
 // @todo: инициализация
+
 const applyPagination = initPagination(
   // передаём сюда элементы пагинации, найденные в шаблоне
   sampleTable.pagination.elements,
@@ -71,11 +76,17 @@ const applyPagination = initPagination(
     label.textContent = page;
     return el;
   }
-); 
+);
 
- 
+const applySorting = initSorting([
+  // Нам нужно передать сюда массив элементов,
+  // которые вызывают сортировку, чтобы изменять
+  //  их визуальное представление
+  sampleTable.header.elements.sortByDate,
+  sampleTable.header.elements.sortByTotal,
+]);
 
-const appRoot = document.querySelector('#app');
+const appRoot = document.querySelector("#app");
 appRoot.appendChild(sampleTable.container);
 
 render();
